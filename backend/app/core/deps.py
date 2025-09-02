@@ -1,9 +1,12 @@
-from fastapi import Header, HTTPException
-from typing import Optional
-from app.core.db import get_session
+from typing import AsyncGenerator
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+import os
 
-async def db_session(x_tenant_id: Optional[str] = Header(default=None)):
-    if not x_tenant_id:
-        raise HTTPException(status_code=400, detail="X-Tenant-ID Header fehlt.")
-    async for s in get_session(x_tenant_id):
-        yield s
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://app_rw:app_rw_pw@db:5432/verdiant")
+
+engine = create_async_engine(DATABASE_URL, future=True, pool_pre_ping=True)
+SessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+async def db_session() -> AsyncGenerator[AsyncSession, None]:
+    async with SessionLocal() as session:
+        yield session
