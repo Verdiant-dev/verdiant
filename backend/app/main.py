@@ -1,16 +1,27 @@
+import os
 from fastapi import FastAPI, Depends
-from .routers import health, datapoints, bootstrap, imports, templates, audit, export
-from .core.auth import tenant_context
 
-def create_app():
+# Router-Imports
+from .routers import health, datapoints, imports, templates, audit, export
+# Auth / DB
+from .core.auth import tenant_context  # setzt Tenant via X-API-Key
+from .core import deps  # nur damit der Import sichergestellt ist
+
+# DEV-only Router separat importieren
+from .routers import bootstrap
+
+def create_app() -> FastAPI:
     app = FastAPI(title="Verdiant API")
 
-    # öffentlich
+    # immer
     app.include_router(health.router)
-    app.include_router(bootstrap.router)   # nur DEV/onboarding
-    app.include_router(templates.router)   # kann öffentlich bleiben
+    app.include_router(templates.router)
 
-    # geschützt (setzt per Dependency den Tenant-Kontext über API-Key)
+    # nur in DEV
+    if os.getenv("ENV", "dev") == "dev":
+        app.include_router(bootstrap.router)
+
+    # geschützte Routen (Tenant-Kontext via API-Key erforderlich)
     app.include_router(datapoints.router, dependencies=[Depends(tenant_context)])
     app.include_router(imports.router,    dependencies=[Depends(tenant_context)])
     app.include_router(audit.router,      dependencies=[Depends(tenant_context)])
