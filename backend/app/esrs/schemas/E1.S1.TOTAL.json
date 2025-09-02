@@ -1,0 +1,10 @@
+{
+  "code": "E1.S1.TOTAL",
+  "label": "Scope-1-Emissionen gesamt",
+  "type": "number",
+  "unit": "tCO2e",
+  "required": true,
+  "rules": [
+    { "name": "non_negative", "op": ">=", "value": 0 }
+  ]
+}
